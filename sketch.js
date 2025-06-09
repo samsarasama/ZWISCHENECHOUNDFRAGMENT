@@ -5,10 +5,10 @@ let isLandscape = false;
 
 function preload() {
   images = [
-    loadImage('ASSETS/LAYER_1.jpg', img => console.log('Layer 0 loaded'), err => console.error('Layer 0 load error:', err)),
-    loadImage('ASSETS/LAYER_2.png', img => console.log('Layer 1 loaded'), err => console.error('Layer 1 load error:', err)),
-    loadImage('ASSETS/LAYER_3.png', img => console.log('Layer 2 loaded'), err => console.error('Layer 2 load error:', err)),
-    loadImage('ASSETS/LAYER_4.png', img => console.log('Layer 3 loaded'), err => console.error('Layer 3 load error:', err)),
+    loadImage('LAYER_1.jpg', img => console.log('Layer 0 loaded'), err => console.error('Layer 0 load error:', err)),
+    loadImage('LAYER_2.png', img => console.log('Layer 1 loaded'), err => console.error('Layer 1 load error:', err)),
+    loadImage('LAYER_3.png', img => console.log('Layer 2 loaded'), err => console.error('Layer 2 load error:', err)),
+    loadImage('LAYER_4.png', img => console.log('Layer 3 loaded'), err => console.error('Layer 3 load error:', err)),
     null // Platzhalter für weißen Hintergrund
   ];
 }
