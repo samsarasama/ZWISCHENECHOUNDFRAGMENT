@@ -88,10 +88,10 @@ function draw() {
   frameRate(30);
 }
 
-function touchStarted() {
+function mousePressed() {
   if (isLandscape) {
-    for (let touch of touches) handleInteraction(touch.x, touch.y);
-    return false;
+    handleInteraction(mouseX, mouseY);
+    return false; // Verhindert Standardverhalten
   }
 }
 
