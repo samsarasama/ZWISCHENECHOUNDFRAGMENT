@@ -1,42 +1,30 @@
 let images = [];
 let fragments = [];
-let gridSize = 3;
+let gridSize = 3; // 3x3 Kachelraster
 let isLandscape = false;
-let lastInteractionTime = 0;
-const DEBUG = false;
 
 function preload() {
   images = [
-    loadImage('LAYER_1.jpg'),
-    loadImage('LAYER_2.png'),
-    loadImage('LAYER_3.png'),
-    loadImage('LAYER_4.png'),
-    null
+    loadImage('LAYER_1.jpg', img => {}, err => console.error('Layer 0 load error:', err)),
+    loadImage('LAYER_2.png', img => {}, err => console.error('Layer 1 load error:', err)),
+    loadImage('LAYER_3.png', img => {}, err => console.error('Layer 2 load error:', err)),
+    loadImage('LAYER_4.png', img => {}, err => console.error('Layer 3 load error:', err)),
+    null // Weißer Hintergrund
   ];
 }
 
 function setup() {
-  console.log("setup läuft");
   createCanvas(windowWidth, windowHeight);
-    console.log('isLandscape:', isLandscape);
-console.log('image load check:', images.map(img => img?.width));
-  pixelDensity(1);
-  noSmooth();
   checkOrientation();
-
-  // !!! TESTWEISE überspringen wir die Bedingungen
-  createFragments();
-
-  fullscreen(true);
+  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
+  else console.error('Images not loaded or not in landscape mode.');
+  // fullscreen(true); // Für Browser-Test deaktiviert, da es Koordinatenprobleme verursachen kann
 }
-
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   checkOrientation();
-  if (images.every(img => img?.width || !img) && isLandscape) {
-    createFragments();
-  }
+  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
 }
 
 function checkOrientation() {
@@ -82,56 +70,72 @@ function draw() {
     return;
   }
   background(0);
-  for (let frag of fragments) {
-    if (frag.visible) {
-      push();
-      tint(frag.colorState === 1 ? [255, 105, 180, 220] :
-           frag.colorState === 2 ? [255, 255, 0, 220] :
-           [255, 255, 255]);
-      if (frag.img) {
-        image(frag.img, frag.x, frag.y, frag.width, frag.height,
-              frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
-      } else {
-        fill(255);
-        noStroke();
-        rect(frag.x, frag.y, frag.width, frag.height);
+  noStroke();
+  for (let i = 0; i < gridSize * gridSize; i++) {
+    let col = i % gridSize;
+    let row = floor(i / gridSize);
+    let x = col * (width / gridSize);
+    let y = row * (height / gridSize);
+    let baseIndex = i * 5;
+    let visibleFrag = null;
+    for (let j = 0; j < 5; j++) {
+      if (fragments[baseIndex + j].visible) {
+        visibleFrag = fragments[baseIndex + j];
+        break;
       }
-      pop();
+    }
+    if (visibleFrag) {
+      tint(visibleFrag.colorState === 1 ? 0xFF69B4CC : visibleFrag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF);
+      if (visibleFrag.img) image(visibleFrag.img, x, y, width / gridSize, height / gridSize, visibleFrag.sourceX, visibleFrag.sourceY, visibleFrag.sourceWidth, visibleFrag.sourceHeight);
+      else {
+        fill(visibleFrag.colorState === 1 ? 0xFF69B4 : visibleFrag.colorState === 2 ? 0xFFFF00 : 0xFFFFFF);
+        rect(x, y, width / gridSize, height / gridSize);
+      }
     }
   }
+  frameRate(15);
 }
 
 function mousePressed() {
   if (isLandscape) {
-    if (DEBUG) console.log('Mouse pressed at:', mouseX, mouseY);
-    handleInteraction(mouseX, mouseY);
+    // Begrenze Koordinaten auf Canvas-Größe
+    let x = constrain(mouseX, 0, width - 1);
+    let y = constrain(mouseY, 0, height - 1);
+    // console.log('Mouse pressed at:', x, y, 'Canvas size:', width, height); // Optional, nur für Debugging
+    handleInteraction(x, y);
+  } else {
+    // console.log('Not in landscape mode'); // Optional, nur für Debugging
   }
-}
-
-function touchStarted() {
-  if (isLandscape) {
-    handleInteraction(touchX, touchY);
-  }
-  return false;
 }
 
 function handleInteraction(x, y) {
-  let now = millis();
-  if (now - lastInteractionTime < 100) return;
-  lastInteractionTime = now;
-
+  if (!isLandscape) return;
   let col = floor(x / (width / gridSize));
   let row = floor(y / (height / gridSize));
-  if (DEBUG) console.log('Calculated col, row:', col, row);
+  // console.log('Calculated col, row:', col, row, 'Grid size:', gridSize); // Optional, nur für Debugging
   if (col >= 0 && col < gridSize && row >= 0 && row < gridSize) {
     let index = row * gridSize + col;
     let baseIndex = index * 5;
-    if (DEBUG) console.log('Base index:', baseIndex);
+    // console.log('Base index:', baseIndex); // Optional, nur für Debugging
     if (baseIndex >= 0 && baseIndex < fragments.length) {
       let frags = fragments.slice(baseIndex, baseIndex + 5);
-      let currentState = frags[0].state;
-      let newState = (currentState + 1) % 31;
+      let newState = (frags[0].state + 1) % 31;
       frags[0].state = newState;
 
-      let visibleCount = 0;
-      frags[0].visible = (newState & 1)
+      frags[0].visible = (newState & 1) > 0;
+      frags[1].visible = (newState & 2) > 0;
+      frags[2].visible = (newState & 4) > 0;
+      frags[3].visible = (newState & 8) > 0;
+      frags[4].visible = (newState & 16) > 0;
+
+      for (let frag of frags) frag.colorState = floor(random(3));
+    } else {
+      // console.log('Base index out of bounds'); // Optional, nur für Debugging
+    }
+  } else {
+    // console.log('Click outside grid'); // Optional, nur für Debugging
+  }
+}
+
+function preventDefault(e) { e.preventDefault(); }
+document.addEventListener('touchmove', preventDefault, { passive: false });
