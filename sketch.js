@@ -9,7 +9,6 @@ function preload() {
     loadImage('LAYER_2.png', img => console.log('Layer 1 loaded'), err => console.error('Layer 1 load error:', err)),
     loadImage('LAYER_3.png', img => console.log('Layer 2 loaded'), err => console.error('Layer 2 load error:', err)),
     loadImage('LAYER_4.png', img => console.log('Layer 3 loaded'), err => console.error('Layer 3 load error:', err)),
-    loadImage('LAYER_5.png', img => console.log('Layer 4 loaded'), err => console.error('Layer 4 load error:', err)),
     null // Platzhalter für weißen Hintergrund (optional)
   ];
 }
@@ -51,19 +50,19 @@ function createFragments() {
     let row = floor(i / gridSize);
     let x = col * fragWidth;
     let y = row * fragHeight;
-    for (let layer = 0; layer < 6; layer++) { // Jetzt 6 Layern (5 Bilder + weißer Hintergrund)
+    for (let layer = 0; layer < 5; layer++) { // Jetzt 6 Layern (5 Bilder + weißer Hintergrund)
       fragments.push({
         img: images[layer], x, y, width: fragWidth, height: fragHeight,
         sourceX: (col * (images[layer]?.width || width)) / gridSize,
         sourceY: (row * (images[layer]?.height || height)) / gridSize,
         sourceWidth: (images[layer]?.width || width) / gridSize,
         sourceHeight: (images[layer]?.height || height) / gridSize,
-        visible: false, state: floor(random(63)), colorState: 0 // 63 Zustände für 6 Layern
+        visible: false, state: floor(random(48)), colorState: 0 // 63 Zustände für 6 Layern
       });
     }
   }
-  for (let i = 0; i < fragments.length; i += 6) {
-    let randIdx = floor(random(6));
+  for (let i = 0; i < fragments.length; i += 5) {
+    let randIdx = floor(random(5));
     fragments[i + randIdx].visible = true;
   }
 }
@@ -103,13 +102,13 @@ function touchStarted() {
 
 function handleInteraction(x, y) {
   if (!isLandscape) return;
-  for (let i = 0; i < fragments.length / 6; i++) {
+  for (let i = 0; i < fragments.length / 5; i++) {
     let baseIndex = i * 6;
     let frag = fragments[baseIndex];
     if (x >= frag.x && x <= frag.x + frag.width && y >= frag.y && y <= frag.y + frag.height) {
-      let frags = fragments.slice(baseIndex, baseIndex + 6);
+      let frags = fragments.slice(baseIndex, baseIndex + 5);
       let currentState = frags[0].state;
-      let newState = (currentState + 1) % 63; // 63 Zustände für 6 Layern (2^6 - 1)
+      let newState = (currentState + 1) % 48; // 63 Zustände für 6 Layern (2^6 - 1)
       frags[0].state = newState;
 
       let visibleCount = 0;
@@ -118,15 +117,14 @@ function handleInteraction(x, y) {
       frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
       frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
       frags[4].visible = (newState & 16) > 0; if (frags[4].visible) visibleCount++;
-      frags[5].visible = (newState & 32) > 0; if (frags[5].visible) visibleCount++;
 
       if (visibleCount === 0) {
         let randIdx = floor(random(6));
         frags[randIdx].visible = true;
       }
       if (visibleCount < 3 && random() < 0.7) {
-        let randIdx = floor(random(6));
-        while (frags[randIdx].visible) randIdx = (randIdx + 1) % 6;
+        let randIdx = floor(random(5));
+        while (frags[randIdx].visible) randIdx = (randIdx + 1) % 5;
         frags[randIdx].visible = true;
       }
 
