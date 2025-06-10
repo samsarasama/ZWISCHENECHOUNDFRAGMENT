@@ -1,6 +1,6 @@
 let images = [];
 let fragments = [];
-let gridSize = 4; // Feste 4x4 Kachelraster
+let gridSize = 3; // 3x3 Kachelraster
 
 function preload() {
   images = [
@@ -12,13 +12,21 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(1920, 1200); // Feste Canvas-Größe für Lenovo M10 (1920x1200)
-  createFragments();
+  createCanvas(windowWidth, windowHeight);
+  pixelDensity(1);
+  noSmooth();
+  if (images.every(img => img?.width)) createFragments();
+  else console.error('One or more images not loaded. Check file names and upload.');
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  if (images.every(img => img?.width)) createFragments();
 }
 
 function createFragments() {
   fragments = [];
-  let fragSize = 480; // Feste Breite/Höhe pro Kachel (1920 / 4 bzw. 1200 / 4)
+  let fragSize = min(width, height) / gridSize;
   for (let i = 0; i < gridSize * gridSize; i++) {
     let col = i % gridSize;
     let row = floor(i / gridSize);
@@ -44,54 +52,61 @@ function createFragments() {
 function draw() {
   background(0); // Standard-Hintergrund
   for (let frag of fragments) {
-    if (frag.visible && frag.img && frag.sourceWidth && frag.sourceHeight) {
-      let tintColor = frag.colorState === 1 ? 0xFF69B4CC : frag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF;
-      tint(tintColor);
+    if (!frag.img || !frag.sourceWidth || !frag.sourceHeight) continue;
+    if (frag.visible) {
+      push();
+      // Farbe basierend auf colorState, Originalbild bleibt erkennbar
+      if (frag.colorState === 1) tint(255, 105, 180, 220); // Leichtes Rosa
+      else if (frag.colorState === 2) tint(255, 255, 0, 220); // Leichtes Gelb
+      else tint(255, 255, 255); // Keine Färbung
       image(frag.img, frag.x, frag.y, frag.width, frag.height, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
+      pop();
     }
   }
-  frameRate(15);
+}
+
+function mousePressed() {
+  handleInteraction(mouseX, mouseY);
 }
 
 function touchStarted() {
-  if (touches.length > 0) {
-    for (let touch of touches) {
-      let x = constrain(touch.x, 0, 1919);
-      let y = constrain(touch.y, 0, 1199);
-      let col = floor(x / 480);
-      let row = floor(y / 300);
-      if (col >= 0 && col < gridSize && row >= 0 && row < gridSize) {
-        let index = row * gridSize + col;
-        let baseIndex = index * 4;
-        let frags = fragments.slice(baseIndex, baseIndex + 4);
-        let currentState = frags[0].state;
-        let newState = (currentState + 1) % 15;
-        frags[0].state = newState;
+  for (let touch of touches) handleInteraction(touch.x, touch.y);
+}
 
-        let visibleCount = 0;
-        frags[0].visible = (newState & 1) > 0; if (frags[0].visible) visibleCount++;
-        frags[1].visible = (newState & 2) > 0; if (frags[1].visible) visibleCount++;
-        frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
-        frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
+function handleInteraction(x, y) {
+  for (let i = 0; i < fragments.length / 4; i++) {
+    let baseIndex = i * 4;
+    let isInTile = x >= fragments[baseIndex].x && x <= fragments[baseIndex].x + fragments[baseIndex].width &&
+                   y >= fragments[baseIndex].y && y <= fragments[baseIndex].y + fragments[baseIndex].height;
+    if (isInTile) {
+      let frags = fragments.slice(baseIndex, baseIndex + 4);
+      let currentState = frags[0].state;
+      let newState = (currentState + 1) % 15; // 15 Zustände (0-14) für 4 Layer
+      frags[0].state = newState;
 
-        if (visibleCount === 0) {
-          let randIdx = floor(random(4));
-          frags[randIdx].visible = true;
-        }
-        if (visibleCount < 3 && random() < 0.7) {
-          let randIdx = floor(random(4));
-          while (frags[randIdx].visible) randIdx = (randIdx + 1) % 4;
-          frags[randIdx].visible = true;
-        }
+      let visibleCount = 0;
+      frags[0].visible = (newState & 1) > 0; if (frags[0].visible) visibleCount++;
+      frags[1].visible = (newState & 2) > 0; if (frags[1].visible) visibleCount++;
+      frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
+      frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
 
-        for (let frag of frags) {
-          if (random() < 0.5) frag.colorState = 0; // Keine Färbung
-          else if (random() < 0.75) frag.colorState = 1; // Rosa
-          else frag.colorState = 2; // Gelb
-        }
+      if (visibleCount === 0) {
+        let randIdx = floor(random(4));
+        frags[randIdx].visible = true;
+      }
+      if (visibleCount < 3 && random() < 0.7) {
+        let randIdx = floor(random(4));
+        while (frags[randIdx].visible) randIdx = (randIdx + 1) % 4;
+        frags[randIdx].visible = true;
+      }
+
+      // Zufällige Farbänderung bei Interaktion
+      for (let frag of frags) {
+        if (random() < 0.5) frag.colorState = 0; // Keine Färbung
+        else if (random() < 0.75) frag.colorState = 1; // Rosa
+        else frag.colorState = 2; // Gelb
       }
     }
-    return false; // Verhindert Standard-Touch-Verhalten
   }
 }
 
