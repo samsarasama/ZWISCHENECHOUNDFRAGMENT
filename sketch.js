@@ -18,7 +18,7 @@ function setup() {
   checkOrientation();
   if (images.every(img => img?.width || !img) && isLandscape) createFragments();
   else console.error('Images not loaded or not in landscape mode.');
-  // fullscreen(true); // Für Browser-Test deaktiviert, da es Koordinatenprobleme verursachen kann
+  // fullscreen(true); // Für Browser-Test deaktiviert
 }
 
 function windowResized() {
@@ -54,7 +54,7 @@ function createFragments() {
         sourceY: (row * (images[layer]?.height || height)) / gridSize,
         sourceWidth: (images[layer]?.width || width) / gridSize,
         sourceHeight: (images[layer]?.height || height) / gridSize,
-        visible: false, state: floor(random(31)), colorState: 0
+        visible: false, state: floor(random(31)), colorState: (layer < 2 ? 0 : -1) // Nur Ebene 0 und 1 können Farben ändern
       });
     }
   }
@@ -85,10 +85,14 @@ function draw() {
       }
     }
     if (visibleFrag) {
-      tint(visibleFrag.colorState === 1 ? 0xFF69B4CC : visibleFrag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF);
+      let tintColor = 0xFFFFFF; // Standardfarbe (weiß)
+      if (visibleFrag.colorState >= 0) {
+        tintColor = visibleFrag.colorState === 1 ? 0xFF69B4CC : visibleFrag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF;
+      }
+      tint(tintColor);
       if (visibleFrag.img) image(visibleFrag.img, x, y, width / gridSize, height / gridSize, visibleFrag.sourceX, visibleFrag.sourceY, visibleFrag.sourceWidth, visibleFrag.sourceHeight);
       else {
-        fill(visibleFrag.colorState === 1 ? 0xFF69B4 : visibleFrag.colorState === 2 ? 0xFFFF00 : 0xFFFFFF);
+        fill(tintColor & 0xFFFFFF); // Nur RGB-Komponente für den weißen Hintergrund
         rect(x, y, width / gridSize, height / gridSize);
       }
     }
@@ -101,10 +105,7 @@ function mousePressed() {
     // Begrenze Koordinaten auf Canvas-Größe
     let x = constrain(mouseX, 0, width - 1);
     let y = constrain(mouseY, 0, height - 1);
-    // console.log('Mouse pressed at:', x, y, 'Canvas size:', width, height); // Optional, nur für Debugging
     handleInteraction(x, y);
-  } else {
-    // console.log('Not in landscape mode'); // Optional, nur für Debugging
   }
 }
 
@@ -112,11 +113,9 @@ function handleInteraction(x, y) {
   if (!isLandscape) return;
   let col = floor(x / (width / gridSize));
   let row = floor(y / (height / gridSize));
-  // console.log('Calculated col, row:', col, row, 'Grid size:', gridSize); // Optional, nur für Debugging
   if (col >= 0 && col < gridSize && row >= 0 && row < gridSize) {
     let index = row * gridSize + col;
     let baseIndex = index * 5;
-    // console.log('Base index:', baseIndex); // Optional, nur für Debugging
     if (baseIndex >= 0 && baseIndex < fragments.length) {
       let frags = fragments.slice(baseIndex, baseIndex + 5);
       let newState = (frags[0].state + 1) % 31;
@@ -128,12 +127,13 @@ function handleInteraction(x, y) {
       frags[3].visible = (newState & 8) > 0;
       frags[4].visible = (newState & 16) > 0;
 
-      for (let frag of frags) frag.colorState = floor(random(3));
-    } else {
-      // console.log('Base index out of bounds'); // Optional, nur für Debugging
+      // Farbänderung nur für Ebene 0 und 1
+      for (let i = 0; i < 2; i++) {
+        if (frags[i].visible && frags[i].colorState >= 0) {
+          frags[i].colorState = floor(random(3)); // 0 (weiß), 1 (rosa), 2 (gelb)
+        }
+      }
     }
-  } else {
-    // console.log('Click outside grid'); // Optional, nur für Debugging
   }
 }
 
