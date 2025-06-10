@@ -5,10 +5,10 @@ let isLandscape = false;
 
 function preload() {
   images = [
-    loadImage('LAYER_1.jpg', img => {}, err => console.error('Layer 0 load error:', err)),
-    loadImage('LAYER_2.png', img => {}, err => console.error('Layer 1 load error:', err)),
-    loadImage('LAYER_3.png', img => {}, err => console.error('Layer 2 load error:', err)),
-    loadImage('LAYER_4.png', img => {}, err => console.error('Layer 3 load error:', err)),
+    loadImage('LAYER_1.jpg', img => {}, err => {}),
+    loadImage('LAYER_2.png', img => {}, err => {}),
+    loadImage('LAYER_3.png', img => {}, err => {}),
+    loadImage('LAYER_4.png', img => {}, err => {}),
     null // Weißer Hintergrund
   ];
 }
@@ -54,7 +54,7 @@ function createFragments() {
         sourceY: (row * (images[layer]?.height || height)) / gridSize,
         sourceWidth: (images[layer]?.width || width) / gridSize,
         sourceHeight: (images[layer]?.height || height) / gridSize,
-        visible: false, state: floor(random(31)), colorState: (layer < 2 ? 0 : -1) // Nur Ebene 0 und 1 können Farben ändern
+        visible: false, state: floor(random(31)), colorState: (layer >= 2 && layer < 4 ? 0 : -1) // Nur Ebene 2 und 3 können Farben ändern
       });
     }
   }
@@ -127,8 +127,8 @@ function handleInteraction(x, y) {
       frags[3].visible = (newState & 8) > 0;
       frags[4].visible = (newState & 16) > 0;
 
-      // Farbänderung nur für Ebene 0 und 1
-      for (let i = 0; i < 2; i++) {
+      // Farbänderung nur für Ebene 2 und 3
+      for (let i = 2; i < 4; i++) {
         if (frags[i].visible && frags[i].colorState >= 0) {
           frags[i].colorState = floor(random(3)); // 0 (weiß), 1 (rosa), 2 (gelb)
         }
