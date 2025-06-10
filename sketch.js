@@ -18,7 +18,7 @@ function setup() {
   checkOrientation();
   if (images.every(img => img?.width || !img) && isLandscape) createFragments();
   else console.error('Images not loaded or not in landscape mode.');
-  // fullscreen(true); // Für Browser-Test deaktiviert, da es Koordinatenprobleme verursachen kann
+   fullscreen(true); // Für Browser-Test deaktiviert, da es Koordinatenprobleme verursachen kann
 }
 
 function windowResized() {
