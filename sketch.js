@@ -29,7 +29,7 @@ function setup() {
   let context = canvas.getContext('2d');
   context.imageSmoothingEnabled = false; // Hardware-Beschleunigung
   createFragments();
-  //fullscreen(true);
+  fullscreen(true);
 }
 
 function createFragments() {
