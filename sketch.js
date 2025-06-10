@@ -1,7 +1,7 @@
 let images = [];
 let fragments = [];
 let gridSize = 3; // 3x3 Kachelraster
-let isLandscape = true; // Feste Landschaftsorientierung, da Größe angepasst ist
+let isLandscape = true; // Feste Landschaftsorientierung
 
 // Vordefinierte Abfolge von Kombinationen (2-4 Ebenen)
 const combinations = [
@@ -69,7 +69,7 @@ function draw() {
       noStroke();
     }
   }
-  frameRate(15); // Reduzierte Frame-Rate
+  frameRate(15);
 }
 
 function mousePressed() {
@@ -83,33 +83,44 @@ function touchStarted() {
 }
 
 function handleInteraction(x, y) {
-  let col = floor(x / 640); // Feste Fragment-Breite
-  let row = floor(y / 400); // Feste Fragment-Höhe
+  let col = floor(x / 640);
+  let row = floor(y / 400);
   let index = row * gridSize + col;
   let baseIndex = index * 5;
 
   if (baseIndex >= 0 && baseIndex < fragments.length) {
-    let frags = fragments.slice(baseIndex, baseIndex + 5);
-    let currentState = frags[0].state;
+    // Einzelne Fragmente direkt ansprechen statt slice
+    let frag0 = fragments[baseIndex];
+    let frag1 = fragments[baseIndex + 1];
+    let frag2 = fragments[baseIndex + 2];
+    let frag3 = fragments[baseIndex + 3];
+    let frag4 = fragments[baseIndex + 4];
+    
+    let currentState = frag0.state;
     let nextState = (currentState + 1) % combinations.length;
-    frags[0].state = nextState;
+    frag0.state = nextState;
 
-    for (let layer = 0; layer < 5; layer++) {
-      frags[layer].visible = combinations[nextState].includes(layer);
-    }
+    // Sichtbarkeit basierend auf Kombination setzen
+    frag0.visible = combinations[nextState].includes(0);
+    frag1.visible = combinations[nextState].includes(1);
+    frag2.visible = combinations[nextState].includes(2);
+    frag3.visible = combinations[nextState].includes(3);
+    frag4.visible = combinations[nextState].includes(4);
 
-    if (random() < 0.7 && frags.slice(1, 5).every(f => !f.visible)) {
+    // Zufallswert einmal generieren
+    let rand = random();
+    if (rand < 0.7 && !frag1.visible && !frag2.visible && !frag3.visible && !frag4.visible) {
       let upperIdx = floor(random(1, 5));
-      frags[upperIdx].visible = true;
+      [frag1, frag2, frag3, frag4][upperIdx - 1].visible = true;
     }
 
-    for (let frag of frags) {
-      if (frag.visible) {
-        if (random() < 0.3) frag.colorState = 0; // 30% Transparenz
-        else if (random() < 0.65) frag.colorState = 1; // 35% Rosa
-        else frag.colorState = 2; // 35% Gelb
-      }
-    }
+    // Farbänderung mit einem Zufallswert
+    let colorRand = random();
+    if (frag0.visible) frag0.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
+    if (frag1.visible) frag1.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
+    if (frag2.visible) frag2.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
+    if (frag3.visible) frag3.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
+    if (frag4.visible) frag4.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
   }
 }
 
