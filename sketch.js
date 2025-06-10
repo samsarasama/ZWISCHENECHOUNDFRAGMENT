@@ -54,7 +54,7 @@ function createFragments() {
         sourceY: (row * (images[layer]?.height || height)) / gridSize,
         sourceWidth: (images[layer]?.width || width) / gridSize,
         sourceHeight: (images[layer]?.height || height) / gridSize,
-        visible: false, state: floor(random(31)), colorState: (layer >= 2 && layer < 4 ? 0 : -1) // Nur Ebene 2 und 3 können Farben ändern
+        visible: false, state: floor(random(31)), colorState: 0 // Alle Ebenen können Farben ändern
       });
     }
   }
@@ -77,23 +77,16 @@ function draw() {
     let x = col * (width / gridSize);
     let y = row * (height / gridSize);
     let baseIndex = i * 5;
-    let visibleFrag = null;
     for (let j = 0; j < 5; j++) {
-      if (fragments[baseIndex + j].visible) {
-        visibleFrag = fragments[baseIndex + j];
-        break;
-      }
-    }
-    if (visibleFrag) {
-      let tintColor = 0xFFFFFF; // Standardfarbe (weiß)
-      if (visibleFrag.colorState >= 0) {
-        tintColor = visibleFrag.colorState === 1 ? 0xFF69B4CC : visibleFrag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF;
-      }
-      tint(tintColor);
-      if (visibleFrag.img) image(visibleFrag.img, x, y, width / gridSize, height / gridSize, visibleFrag.sourceX, visibleFrag.sourceY, visibleFrag.sourceWidth, visibleFrag.sourceHeight);
-      else {
-        fill(tintColor & 0xFFFFFF); // Nur RGB-Komponente für den weißen Hintergrund
-        rect(x, y, width / gridSize, height / gridSize);
+      let frag = fragments[baseIndex + j];
+      if (frag.visible) {
+        let tintColor = frag.colorState === 1 ? 0xFF69B4CC : frag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF;
+        tint(tintColor);
+        if (frag.img) image(frag.img, x, y, width / gridSize, height / gridSize, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
+        else {
+          fill(tintColor & 0xFFFFFF);
+          rect(x, y, width / gridSize, height / gridSize);
+        }
       }
     }
   }
@@ -127,10 +120,10 @@ function handleInteraction(x, y) {
       frags[3].visible = (newState & 8) > 0;
       frags[4].visible = (newState & 16) > 0;
 
-      // Farbänderung nur für Ebene 2 und 3
-      for (let i = 2; i < 4; i++) {
-        if (frags[i].visible && frags[i].colorState >= 0) {
-          frags[i].colorState = floor(random(3)); // 0 (weiß), 1 (rosa), 2 (gelb)
+      // Farbänderung für alle sichtbaren Ebenen
+      for (let frag of frags) {
+        if (frag.visible) {
+          frag.colorState = floor(random(3)); // 0 (weiß), 1 (rosa), 2 (gelb)
         }
       }
     }
