@@ -2,6 +2,7 @@ let images = [];
 let fragments = [];
 let gridSize = 3; // 3x3 Kachelraster
 let isLandscape = true; // Feste Landschaftsorientierung
+let lastInteraction = 0; // Zeitstempel für Drosselung
 
 // Vordefinierte Abfolge von Kombinationen (2-4 Ebenen)
 const combinations = [
@@ -14,10 +15,10 @@ const combinations = [
 
 function preload() {
   images = [
-    loadImage('LAYER_1-min.jpg'),
-    loadImage('LAYER_2-min.png'),
-    loadImage('LAYER_3-min.png'),
-    loadImage('LAYER_4-min.png'), 
+    loadImage('LAYER_1-min.jpg', () => console.log('LAYER_1-min.jpg loaded'), (err) => console.error('Failed to load LAYER_1-min.jpg:', err)),
+    loadImage('LAYER_2-min.png', () => console.log('LAYER_2-min.png loaded'), (err) => console.error('Failed to load LAYER_2-min.png:', err)),
+    loadImage('LAYER_3-min.png', () => console.log('LAYER_3-min.png loaded'), (err) => console.error('Failed to load LAYER_3-min.png:', err)),
+    loadImage('LAYER_4-min.png', () => console.log('LAYER_4-min.png loaded'), (err) => console.error('Failed to load LAYER_4-min.png:', err)),
     null // Weißer Hintergrund
   ];
 }
@@ -29,7 +30,8 @@ function setup() {
   let context = canvas.getContext('2d');
   context.imageSmoothingEnabled = false; // Hardware-Beschleunigung
   createFragments();
-  fullscreen(true);
+  // fullscreen(true) auskommentiert für Testzwecke
+  console.log('Setup completed, fragments created:', fragments.length);
 }
 
 function createFragments() {
@@ -69,17 +71,29 @@ function draw() {
       noStroke();
     }
   }
-  frameRate(15);
+  console.log('Frame rendered at:', performance.now()); // Debugging für Performance
 }
 
-//function mousePressed() {
-  //handleInteraction(mouseX, mouseY);
-  //return false;
-//}
+function mousePressed() {
+  if (isLandscape && Date.now() - lastInteraction > 200) {
+    console.log('Mouse pressed at:', mouseX, mouseY);
+    handleInteraction(mouseX, mouseY);
+    lastInteraction = Date.now();
+    return false;
+  }
+}
 
 function touchStarted() {
-  for (let touch of touches) handleInteraction(touch.x, touch.y);
-  return false;
+  if (isLandscape) {
+    for (let touch of touches) {
+      if (Date.now() - lastInteraction > 200) {
+        console.log('Touch started at:', touch.x, touch.y);
+        handleInteraction(touch.x, touch.y);
+        lastInteraction = Date.now();
+      }
+    }
+    return false;
+  }
 }
 
 function handleInteraction(x, y) {
@@ -87,9 +101,9 @@ function handleInteraction(x, y) {
   let row = floor(y / 400);
   let index = row * gridSize + col;
   let baseIndex = index * 5;
+  console.log('Calculated col, row:', col, row, 'Base index:', baseIndex);
 
   if (baseIndex >= 0 && baseIndex < fragments.length) {
-    // Einzelne Fragmente direkt ansprechen
     let frag0 = fragments[baseIndex];
     let frag1 = fragments[baseIndex + 1];
     let frag2 = fragments[baseIndex + 2];
@@ -100,23 +114,20 @@ function handleInteraction(x, y) {
     let nextState = (currentState + 1) % combinations.length;
     frag0.state = nextState;
 
-    // Sichtbarkeit basierend auf Kombination setzen
     frag0.visible = combinations[nextState].includes(0);
     frag1.visible = combinations[nextState].includes(1);
     frag2.visible = combinations[nextState].includes(2);
     frag3.visible = combinations[nextState].includes(3);
     frag4.visible = combinations[nextState].includes(4);
 
-    // Zufallswert einmal generieren
     let rand = random();
     if (rand < 0.7 && !frag1.visible && !frag2.visible && !frag3.visible && !frag4.visible) {
       let upperIdx = floor(random(1, 5));
       [frag1, frag2, frag3, frag4][upperIdx - 1].visible = true;
     }
 
-    // Seltene Farbänderung pro Ebene (20% Chance)
     let colorRand = random();
-    if (frag0.visible && colorRand < 0.2) frag0.colorState = colorRand < 0.1 ? 1 : 2; // 10% Rosa, 10% Gelb
+    if (frag0.visible && colorRand < 0.2) frag0.colorState = colorRand < 0.1 ? 1 : 2;
     if (frag1.visible && colorRand < 0.2) frag1.colorState = colorRand < 0.1 ? 1 : 2;
     if (frag2.visible && colorRand < 0.2) frag2.colorState = colorRand < 0.1 ? 1 : 2;
     if (frag3.visible && colorRand < 0.2) frag3.colorState = colorRand < 0.1 ? 1 : 2;
@@ -126,3 +137,7 @@ function handleInteraction(x, y) {
 
 function preventDefault(e) { e.preventDefault(); }
 document.addEventListener('touchmove', preventDefault, { passive: false });
+
+function windowResized() {
+  // Keine Anpassung nötig, da Größe fest ist
+}
