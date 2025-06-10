@@ -1,13 +1,16 @@
 let images = [];
 let fragments = [];
 let gridSize = 4; // 4x4 Kachelraster
+let isLandscape = false;
 
 function preload() {
   images = [
     loadImage('LAYER_1.jpg', img => console.log('Layer 0 loaded'), err => console.error('Layer 0 load error:', err)),
     loadImage('LAYER_2.png', img => console.log('Layer 1 loaded'), err => console.error('Layer 1 load error:', err)),
     loadImage('LAYER_3.png', img => console.log('Layer 2 loaded'), err => console.error('Layer 2 load error:', err)),
-    loadImage('LAYER_4.png', img => console.log('Layer 3 loaded'), err => console.error('Layer 3 load error:', err))
+    loadImage('LAYER_4.png', img => console.log('Layer 3 loaded'), err => console.error('Layer 3 load error:', err)),
+    loadImage('LAYER_5.png', img => console.log('Layer 4 loaded'), err => console.error('Layer 4 load error:', err)),
+    null // Platzhalter für weißen Hintergrund (optional)
   ];
 }
 
@@ -15,69 +18,98 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   pixelDensity(1);
   noSmooth();
-  if (images.every(img => img?.width)) createFragments();
-  else console.error('One or more images not loaded. Check file names and upload.');
+  checkOrientation();
+  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
+  else console.error('One or more images not loaded or device not in landscape mode. Check file names and orientation.');
+  let fs = fullscreen();
+  if (!fs) fullscreen(true);
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  if (images.every(img => img?.width)) createFragments();
+  checkOrientation();
+  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
+}
+
+function checkOrientation() {
+  isLandscape = windowWidth > windowHeight;
+  if (!isLandscape) {
+    background(0);
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(32);
+    text('Bitte drehen Sie das Tablet ins Querformat!', width / 2, height / 2);
+  }
 }
 
 function createFragments() {
   fragments = [];
-  let fragSize = min(width, height) / gridSize;
+  let fragWidth = width / gridSize;
+  let fragHeight = height / gridSize;
   for (let i = 0; i < gridSize * gridSize; i++) {
     let col = i % gridSize;
     let row = floor(i / gridSize);
-    let x = col * fragSize;
-    let y = row * fragSize;
-    for (let layer = 0; layer < 4; layer++) {
+    let x = col * fragWidth;
+    let y = row * fragHeight;
+    for (let layer = 0; layer < 6; layer++) { // Jetzt 6 Layern (5 Bilder + weißer Hintergrund)
       fragments.push({
-        img: images[layer], x, y, width: fragSize, height: fragSize,
-        sourceX: (col * images[layer].width) / gridSize,
-        sourceY: (row * images[layer].height) / gridSize,
-        sourceWidth: images[layer].width / gridSize,
-        sourceHeight: images[layer].height / gridSize,
-        visible: false, state: floor(random(15)), colorState: 0 // Neue Eigenschaft für Farbzustand
+        img: images[layer], x, y, width: fragWidth, height: fragHeight,
+        sourceX: (col * (images[layer]?.width || width)) / gridSize,
+        sourceY: (row * (images[layer]?.height || height)) / gridSize,
+        sourceWidth: (images[layer]?.width || width) / gridSize,
+        sourceHeight: (images[layer]?.height || height) / gridSize,
+        visible: false, state: floor(random(63)), colorState: 0 // 63 Zustände für 6 Layern
       });
     }
   }
-  for (let i = 0; i < fragments.length; i += 4) {
-    let randIdx = floor(random(4));
+  for (let i = 0; i < fragments.length; i += 6) {
+    let randIdx = floor(random(6));
     fragments[i + randIdx].visible = true;
   }
 }
 
 function draw() {
-  background(0); // Standard-Hintergrund
+  if (!isLandscape) {
+    checkOrientation();
+    return;
+  }
+  background(0);
   for (let frag of fragments) {
-    if (!frag.img || !frag.sourceWidth || !frag.sourceHeight) continue;
+    if (!frag.img && !frag.visible) continue;
     if (frag.visible) {
       push();
-      // Farbe basierend auf colorState, Originalbild bleibt erkennbar
       if (frag.colorState === 1) tint(255, 105, 180, 220); // Leichtes Rosa
       else if (frag.colorState === 2) tint(255, 255, 0, 220); // Leichtes Gelb
-      else tint(255, 255, 255); // Keine Färbung
-      image(frag.img, frag.x, frag.y, frag.width, frag.height, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
+      else tint(255, 255, 255); // Keine Färbung oder voller Weiß
+      if (frag.img) {
+        image(frag.img, frag.x, frag.y, frag.width, frag.height, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
+      } else {
+        fill(255); // Weißer Hintergrund
+        noStroke();
+        rect(frag.x, frag.y, frag.width, frag.height);
+      }
       pop();
     }
   }
 }
 
 function touchStarted() {
-  for (let touch of touches) handleInteraction(touch.x, touch.y);
+  if (isLandscape) {
+    for (let touch of touches) {
+      handleInteraction(touch.x, touch.y);
+    }
+  }
 }
 
 function handleInteraction(x, y) {
-  for (let i = 0; i < fragments.length / 4; i++) {
-    let baseIndex = i * 4;
-    let isInTile = x >= fragments[baseIndex].x && x <= fragments[baseIndex].x + fragments[baseIndex].width &&
-                   y >= fragments[baseIndex].y && y <= fragments[baseIndex].y + fragments[baseIndex].height;
-    if (isInTile) {
-      let frags = fragments.slice(baseIndex, baseIndex + 4);
+  if (!isLandscape) return;
+  for (let i = 0; i < fragments.length / 6; i++) {
+    let baseIndex = i * 6;
+    let frag = fragments[baseIndex];
+    if (x >= frag.x && x <= frag.x + frag.width && y >= frag.y && y <= frag.y + frag.height) {
+      let frags = fragments.slice(baseIndex, baseIndex + 6);
       let currentState = frags[0].state;
-      let newState = (currentState + 1) % 15; // 15 Zustände (0-14) für 4 Layer
+      let newState = (currentState + 1) % 63; // 63 Zustände für 6 Layern (2^6 - 1)
       frags[0].state = newState;
 
       let visibleCount = 0;
@@ -85,23 +117,25 @@ function handleInteraction(x, y) {
       frags[1].visible = (newState & 2) > 0; if (frags[1].visible) visibleCount++;
       frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
       frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
+      frags[4].visible = (newState & 16) > 0; if (frags[4].visible) visibleCount++;
+      frags[5].visible = (newState & 32) > 0; if (frags[5].visible) visibleCount++;
 
       if (visibleCount === 0) {
-        let randIdx = floor(random(4));
+        let randIdx = floor(random(6));
         frags[randIdx].visible = true;
       }
       if (visibleCount < 3 && random() < 0.7) {
-        let randIdx = floor(random(4));
-        while (frags[randIdx].visible) randIdx = (randIdx + 1) % 4;
+        let randIdx = floor(random(6));
+        while (frags[randIdx].visible) randIdx = (randIdx + 1) % 6;
         frags[randIdx].visible = true;
       }
 
-      // Zufällige Farbänderung bei Interaktion
       for (let frag of frags) {
         if (random() < 0.5) frag.colorState = 0; // Keine Färbung
         else if (random() < 0.75) frag.colorState = 1; // Rosa
         else frag.colorState = 2; // Gelb
       }
+      break;
     }
   }
 }
