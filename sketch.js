@@ -15,10 +15,10 @@ const combinations = [
 
 function preload() {
   images = [
-    loadImage('LAYER_1-min.jpg', () => console.log('LAYER_1-min.jpg loaded'), (err) => console.error('Failed to load LAYER_1-min.jpg:', err)),
-    loadImage('LAYER_2-min.png', () => console.log('LAYER_2-min.png loaded'), (err) => console.error('Failed to load LAYER_2-min.png:', err)),
-    loadImage('LAYER_3-min.png', () => console.log('LAYER_3-min.png loaded'), (err) => console.error('Failed to load LAYER_3-min.png:', err)),
-    loadImage('LAYER_4-min.png', () => console.log('LAYER_4-min.png loaded'), (err) => console.error('Failed to load LAYER_4-min.png:', err)),
+    loadImage('LAYER_1.jpg', () => console.log('LAYER_1.jpg loaded'), (err) => console.error('Failed to load LAYER_1.jpg:', err)),
+    loadImage('LAYER_2.png', () => console.log('LAYER_2.png loaded'), (err) => console.error('Failed to load LAYER_2.png:', err)),
+    loadImage('LAYER_3.png', () => console.log('LAYER_3.png loaded'), (err) => console.error('Failed to load LAYER_3.png:', err)),
+    loadImage('LAYER_4.png', () => console.log('LAYER_4.png loaded'), (err) => console.error('Failed to load LAYER_4.png:', err)),
     null // Weißer Hintergrund
   ];
 }
