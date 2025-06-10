@@ -1,9 +1,9 @@
 let images = [];
 let fragments = [];
-let gridSize = 3; // 3x3 Kachelraster (angepasst für bessere Performance)
+let gridSize = 3; // 3x3 Kachelraster
 let isLandscape = false;
 
-// Vordefinierte Abfolge von Kombinationen (2-4 Ebenen), unterschiedlich pro Kachel
+// Vordefinierte Abfolge von Kombinationen (2-4 Ebenen)
 const combinations = [
   [1, 2],        // LAYER_2 + LAYER_3
   [1, 2, 3],     // LAYER_2 + LAYER_3 + LAYER_4
@@ -26,6 +26,9 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   pixelDensity(1);
   noSmooth();
+  // Aktiviere Hardware-Beschleunigung
+  let context = canvas.getContext('2d');
+  context.imageSmoothingEnabled = false;
   checkOrientation();
   if (images.every(img => img?.width || !img) && isLandscape) createFragments();
   else console.error('Images not loaded or not in landscape mode.');
@@ -58,7 +61,6 @@ function createFragments() {
     let row = floor(i / gridSize);
     let x = col * fragWidth;
     let y = row * fragHeight;
-    // Zufälliger Startpunkt in der Abfolge pro Kachel
     let startCombo = floor(random(combinations.length));
     for (let layer = 0; layer < 5; layer++) {
       fragments.push({
@@ -68,7 +70,7 @@ function createFragments() {
         sourceWidth: (images[layer]?.width || width) / gridSize,
         sourceHeight: (images[layer]?.height || height) / gridSize,
         visible: combinations[startCombo].includes(layer),
-        state: startCombo, // Startzustand basiert auf Abfolge
+        state: startCombo,
         colorState: 0
       });
     }
@@ -82,21 +84,16 @@ function draw() {
   }
   background(0);
   for (let frag of fragments) {
-    if (frag.visible) {
-      push();
-      // Keine weiße Färbung, Hintergrund ist schwarz, daher nur rosa/gelb oder transparent
-      if (frag.colorState === 1) tint(255, 105, 180, 220); // Leichtes Rosa
-      else if (frag.colorState === 2) tint(255, 255, 0, 220); // Leichtes Gelb
-      else tint(255, 255, 255, 100); // Leichte Transparenz statt Weiß
-      if (frag.img) image(frag.img, frag.x, frag.y, frag.width, frag.height, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
-      else {
-        noFill();
-        noStroke();
-      }
-      pop();
+    if (frag.visible && frag.img) {
+      let tintColor = frag.colorState === 1 ? [255, 105, 180, 220] : frag.colorState === 2 ? [255, 255, 0, 220] : [255, 255, 255, 100];
+      tint(...tintColor);
+      image(frag.img, frag.x, frag.y, frag.width, frag.height, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
+    } else if (frag.visible && !frag.img) {
+      noFill();
+      noStroke();
     }
   }
-  frameRate(30);
+  frameRate(15); // Reduzierte Frame-Rate
 }
 
 function mousePressed() {
@@ -123,21 +120,18 @@ function handleInteraction(x, y) {
   if (baseIndex >= 0 && baseIndex < fragments.length) {
     let frags = fragments.slice(baseIndex, baseIndex + 5);
     let currentState = frags[0].state;
-    let nextState = (currentState + 1) % combinations.length; // Zyklisch durch Abfolge
+    let nextState = (currentState + 1) % combinations.length;
     frags[0].state = nextState;
 
-    // Setze Sichtbarkeit basierend auf der aktuellen Kombination
     for (let layer = 0; layer < 5; layer++) {
       frags[layer].visible = combinations[nextState].includes(layer);
     }
 
-    // Priorisiere obere Ebenen (1-4) mit höherer Wahrscheinlichkeit
     if (random() < 0.7 && frags.slice(1, 5).every(f => !f.visible)) {
-      let upperIdx = floor(random(1, 5)); // Zufällige obere Ebene (1-4)
+      let upperIdx = floor(random(1, 5));
       frags[upperIdx].visible = true;
     }
 
-    // Zufällige Farbänderung, seltener transparent
     for (let frag of frags) {
       if (frag.visible) {
         if (random() < 0.3) frag.colorState = 0; // 30% Transparenz
