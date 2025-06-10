@@ -1,120 +1,93 @@
 let images = [];
 let fragments = [];
-let gridSize = 3; // 3x3 Kachelraster
-let isLandscape = false;
+let gridSize = 4; // Feste 4x4 Kachelraster
 
 function preload() {
   images = [
     loadImage('LAYER_1.jpg', img => {}, err => {}),
     loadImage('LAYER_2.png', img => {}, err => {}),
     loadImage('LAYER_3.png', img => {}, err => {}),
-    loadImage('LAYER_4.png', img => {}, err => {}),
-    null // Weißer Hintergrund
+    loadImage('LAYER_4.png', img => {}, err => {})
   ];
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-  checkOrientation();
-  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
-  else console.error('Images not loaded or not in landscape mode.');
-  // fullscreen(true); // Für Browser-Test deaktiviert, da es Koordinatenprobleme verursachen kann
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  checkOrientation();
-  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
-}
-
-function checkOrientation() {
-  isLandscape = windowWidth > windowHeight;
-  if (!isLandscape) {
-    background(0);
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(32);
-    text('Bitte drehen Sie das Tablet ins Querformat!', width / 2, height / 2);
-  }
+  createCanvas(1920, 1200); // Feste Canvas-Größe für Lenovo M10 (1920x1200)
+  createFragments();
 }
 
 function createFragments() {
   fragments = [];
-  let fragWidth = width / gridSize;
-  let fragHeight = height / gridSize;
+  let fragSize = 480; // Feste Breite/Höhe pro Kachel (1920 / 4 bzw. 1200 / 4)
   for (let i = 0; i < gridSize * gridSize; i++) {
     let col = i % gridSize;
     let row = floor(i / gridSize);
-    let x = col * fragWidth;
-    let y = row * fragHeight;
-    for (let layer = 0; layer < 5; layer++) {
+    let x = col * fragSize;
+    let y = row * fragSize;
+    for (let layer = 0; layer < 4; layer++) {
       fragments.push({
-        img: images[layer], x, y, width: fragWidth, height: fragHeight,
-        sourceX: (col * (images[layer]?.width || width)) / gridSize,
-        sourceY: (row * (images[layer]?.height || height)) / gridSize,
-        sourceWidth: (images[layer]?.width || width) / gridSize,
-        sourceHeight: (images[layer]?.height || height) / gridSize,
-        visible: false, state: floor(random(31)), colorState: 0
+        img: images[layer], x, y, width: fragSize, height: fragSize,
+        sourceX: (col * images[layer].width) / gridSize,
+        sourceY: (row * images[layer].height) / gridSize,
+        sourceWidth: images[layer].width / gridSize,
+        sourceHeight: images[layer].height / gridSize,
+        visible: false, state: floor(random(15)), colorState: 0
       });
     }
   }
-  for (let i = 0; i < fragments.length; i += 5) {
-    let randIdx = floor(random(5));
+  for (let i = 0; i < fragments.length; i += 4) {
+    let randIdx = floor(random(4));
     fragments[i + randIdx].visible = true;
   }
 }
 
 function draw() {
-  if (!isLandscape) {
-    checkOrientation();
-    return;
-  }
-  background(0);
-  noStroke();
-  for (let i = 0; i < gridSize * gridSize; i++) {
-    let col = i % gridSize;
-    let row = floor(i / gridSize);
-    let x = col * (width / gridSize);
-    let y = row * (height / gridSize);
-    let baseIndex = i * 5;
-    for (let j = 0; j < 5; j++) {
-      let frag = fragments[baseIndex + j];
-      if (frag.visible) {
-        let tintColor = frag.colorState === 1 ? 0xFF69B4CC : frag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF;
-        tint(tintColor);
-        if (frag.img) image(frag.img, x, y, width / gridSize, height / gridSize, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
-        else {
-          fill(tintColor & 0xFFFFFF);
-          rect(x, y, width / gridSize, height / gridSize);
-        }
-      }
+  background(0); // Standard-Hintergrund
+  for (let frag of fragments) {
+    if (frag.visible && frag.img && frag.sourceWidth && frag.sourceHeight) {
+      let tintColor = frag.colorState === 1 ? 0xFF69B4CC : frag.colorState === 2 ? 0xFFFF00DC : 0xFFFFFF;
+      tint(tintColor);
+      image(frag.img, frag.x, frag.y, frag.width, frag.height, frag.sourceX, frag.sourceY, frag.sourceWidth, frag.sourceHeight);
     }
   }
   frameRate(15);
 }
 
 function touchStarted() {
-  if (isLandscape) {
-    if (touches.length > 0) {
-      let x = constrain(touches[0].x, 0, width - 1);
-      let y = constrain(touches[0].y, 0, height - 1);
-      let col = floor(x / (width / gridSize));
-      let row = floor(y / (height / gridSize));
+  if (touches.length > 0) {
+    for (let touch of touches) {
+      let x = constrain(touch.x, 0, 1919);
+      let y = constrain(touch.y, 0, 1199);
+      let col = floor(x / 480);
+      let row = floor(y / 300);
       if (col >= 0 && col < gridSize && row >= 0 && row < gridSize) {
         let index = row * gridSize + col;
-        let baseIndex = index * 5;
-        if (baseIndex >= 0 && baseIndex < fragments.length) {
-          let frags = fragments.slice(baseIndex, baseIndex + 5);
-          let newState = (frags[0].state + 1) % 31;
-          frags[0].state = newState;
+        let baseIndex = index * 4;
+        let frags = fragments.slice(baseIndex, baseIndex + 4);
+        let currentState = frags[0].state;
+        let newState = (currentState + 1) % 15;
+        frags[0].state = newState;
 
-          frags[0].visible = (newState & 1) > 0;
-          frags[1].visible = (newState & 2) > 0;
-          frags[2].visible = (newState & 4) > 0;
-          frags[3].visible = (newState & 8) > 0;
-          frags[4].visible = (newState & 16) > 0;
+        let visibleCount = 0;
+        frags[0].visible = (newState & 1) > 0; if (frags[0].visible) visibleCount++;
+        frags[1].visible = (newState & 2) > 0; if (frags[1].visible) visibleCount++;
+        frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
+        frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
 
-          for (let frag of frags) frag.colorState = floor(random(3)); // Zufällige Farbe: 0 (original), 1 (pink), 2 (gelb)
+        if (visibleCount === 0) {
+          let randIdx = floor(random(4));
+          frags[randIdx].visible = true;
+        }
+        if (visibleCount < 3 && random() < 0.7) {
+          let randIdx = floor(random(4));
+          while (frags[randIdx].visible) randIdx = (randIdx + 1) % 4;
+          frags[randIdx].visible = true;
+        }
+
+        for (let frag of frags) {
+          if (random() < 0.5) frag.colorState = 0; // Keine Färbung
+          else if (random() < 0.75) frag.colorState = 1; // Rosa
+          else frag.colorState = 2; // Gelb
         }
       }
     }
