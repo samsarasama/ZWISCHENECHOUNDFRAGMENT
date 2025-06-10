@@ -1,14 +1,14 @@
 let images = [];
 let fragments = [];
-let gridSize = 3; // 3x3 Kachelraster
+let gridSize = 3; // 3x3 Kachelraster (angepasst für bessere Performance)
 let isLandscape = false;
 
 function preload() {
   images = [
-    loadImage('LAYER_1.jpg'),
-    loadImage('LAYER_2.png'),
-    loadImage('LAYER_3.png'),
-    loadImage('LAYER_4.png'),
+    loadImage('LAYER_1.jpg', img => console.log('Layer 0 loaded'), err => console.error('Layer 0 load error:', err)),
+    loadImage('LAYER_2.png', img => console.log('Layer 1 loaded'), err => console.error('Layer 1 load error:', err)),
+    loadImage('LAYER_3.png', img => console.log('Layer 2 loaded'), err => console.error('Layer 2 load error:', err)),
+    loadImage('LAYER_4.png', img => console.log('Layer 3 loaded'), err => console.error('Layer 3 load error:', err)),
     null // Weißer Hintergrund
   ];
 }
@@ -90,7 +90,8 @@ function draw() {
 
 function touchStarted() {
   if (isLandscape) {
-    handleInteraction(touchX, touchY);
+    for (let touch of touches) handleInteraction(touch.x, touch.y);
+    return false;
   }
 }
 
@@ -98,31 +99,30 @@ function handleInteraction(x, y) {
   if (!isLandscape) return;
   let col = floor(x / (width / gridSize));
   let row = floor(y / (height / gridSize));
-  if (col >= 0 && col < gridSize && row >= 0 && row < gridSize) {
-    let index = row * gridSize + col;
-    let baseIndex = index * 5;
-      if (baseIndex >= 0 && baseIndex < fragments.length) {
-      let frags = fragments.slice(baseIndex, baseIndex + 5);
-      let currentState = frags[0].state;
-      let newState = (currentState + 1) % 31;
-      frags[0].state = newState;
+  let index = row * gridSize + col;
+  let baseIndex = index * 5;
 
-      let visibleCount = 0;
-      frags[0].visible = (newState & 1) > 0; if (frags[0].visible) visibleCount++;
-      frags[1].visible = (newState & 2) > 0; if (frags[1].visible) visibleCount++;
-      frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
-      frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
-      frags[4].visible = (newState & 16) > 0; if (frags[4].visible) visibleCount++;
+  if (baseIndex >= 0 && baseIndex < fragments.length) {
+    let frags = fragments.slice(baseIndex, baseIndex + 5);
+    let currentState = frags[0].state;
+    let newState = (currentState + 1) % 31;
+    frags[0].state = newState;
 
-      if (visibleCount === 0) frags[floor(random(5))].visible = true;
-      if (visibleCount < 3 && random() < 0.7) {
-        let randIdx = floor(random(5));
-        while (frags[randIdx].visible) randIdx = (randIdx + 1) % 5;
-        frags[randIdx].visible = true;
-      }
+    let visibleCount = 0;
+    frags[0].visible = (newState & 1) > 0; if (frags[0].visible) visibleCount++;
+    frags[1].visible = (newState & 2) > 0; if (frags[1].visible) visibleCount++;
+    frags[2].visible = (newState & 4) > 0; if (frags[2].visible) visibleCount++;
+    frags[3].visible = (newState & 8) > 0; if (frags[3].visible) visibleCount++;
+    frags[4].visible = (newState & 16) > 0; if (frags[4].visible) visibleCount++;
 
-      for (let frag of frags) frag.colorState = random() < 0.5 ? 0 : random() < 0.75 ? 1 : 2;
+    if (visibleCount === 0) frags[floor(random(5))].visible = true;
+    if (visibleCount < 3 && random() < 0.7) {
+      let randIdx = floor(random(5));
+      while (frags[randIdx].visible) randIdx = (randIdx + 1) % 5;
+      frags[randIdx].visible = true;
     }
+
+    for (let frag of frags) frag.colorState = random() < 0.5 ? 0 : random() < 0.75 ? 1 : 2;
   }
 }
 
