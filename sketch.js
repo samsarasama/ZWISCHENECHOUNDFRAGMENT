@@ -95,17 +95,17 @@ function draw() {
   }
   frameRate(15);
 }
-
-function mousePressed() {
+function touchStarted() {
   if (isLandscape) {
-    // Begrenze Koordinaten auf Canvas-Größe
-    let x = constrain(mouseX, 0, width - 1);
-    let y = constrain(mouseY, 0, height - 1);
-    // console.log('Mouse pressed at:', x, y, 'Canvas size:', width, height); // Optional, nur für Debugging
-    handleInteraction(x, y);
-  } else {
-    // console.log('Not in landscape mode'); // Optional, nur für Debugging
+    handleInteraction(touchX, touchY);
   }
+  return false;
+}
+
+function handleInteraction(x, y) {
+  let now = millis();
+  if (now - lastInteractionTime < 100) return;
+  lastInteractionTime = now;
 }
 
 function handleInteraction(x, y) {
