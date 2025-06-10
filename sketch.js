@@ -29,7 +29,7 @@ function setup() {
   let context = canvas.getContext('2d');
   context.imageSmoothingEnabled = false; // Hardware-Beschleunigung
   createFragments();
-  fullscreen(true);
+  //fullscreen(true);
 }
 
 function createFragments() {
@@ -72,10 +72,10 @@ function draw() {
   frameRate(15);
 }
 
-function mousePressed() {
-  handleInteraction(mouseX, mouseY);
-  return false;
-}
+//function mousePressed() {
+  //handleInteraction(mouseX, mouseY);
+  //return false;
+//}
 
 function touchStarted() {
   for (let touch of touches) handleInteraction(touch.x, touch.y);
@@ -89,7 +89,7 @@ function handleInteraction(x, y) {
   let baseIndex = index * 5;
 
   if (baseIndex >= 0 && baseIndex < fragments.length) {
-    // Einzelne Fragmente direkt ansprechen statt slice
+    // Einzelne Fragmente direkt ansprechen
     let frag0 = fragments[baseIndex];
     let frag1 = fragments[baseIndex + 1];
     let frag2 = fragments[baseIndex + 2];
@@ -114,13 +114,13 @@ function handleInteraction(x, y) {
       [frag1, frag2, frag3, frag4][upperIdx - 1].visible = true;
     }
 
-    // Farbänderung mit einem Zufallswert
+    // Seltene Farbänderung pro Ebene (20% Chance)
     let colorRand = random();
-    if (frag0.visible) frag0.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
-    if (frag1.visible) frag1.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
-    if (frag2.visible) frag2.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
-    if (frag3.visible) frag3.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
-    if (frag4.visible) frag4.colorState = colorRand < 0.3 ? 0 : colorRand < 0.65 ? 1 : 2;
+    if (frag0.visible && colorRand < 0.2) frag0.colorState = colorRand < 0.1 ? 1 : 2; // 10% Rosa, 10% Gelb
+    if (frag1.visible && colorRand < 0.2) frag1.colorState = colorRand < 0.1 ? 1 : 2;
+    if (frag2.visible && colorRand < 0.2) frag2.colorState = colorRand < 0.1 ? 1 : 2;
+    if (frag3.visible && colorRand < 0.2) frag3.colorState = colorRand < 0.1 ? 1 : 2;
+    if (frag4.visible && colorRand < 0.2) frag4.colorState = colorRand < 0.1 ? 1 : 2;
   }
 }
 
