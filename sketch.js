@@ -1,7 +1,7 @@
 let images = [];
 let fragments = [];
 let gridSize = 3; // 3x3 Kachelraster
-let isLandscape = false;
+let isLandscape = true; // Feste Landschaftsorientierung, da Größe angepasst ist
 
 // Vordefinierte Abfolge von Kombinationen (2-4 Ebenen)
 const combinations = [
@@ -23,39 +23,19 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(1920, 1200); // Feste Größe für Lenovo M10 (1920x1200)
   pixelDensity(1);
   noSmooth();
-  // Aktiviere Hardware-Beschleunigung
   let context = canvas.getContext('2d');
-  context.imageSmoothingEnabled = false;
-  checkOrientation();
-  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
-  else console.error('Images not loaded or not in landscape mode.');
+  context.imageSmoothingEnabled = false; // Hardware-Beschleunigung
+  createFragments();
   fullscreen(true);
-}
-
-function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
-  checkOrientation();
-  if (images.every(img => img?.width || !img) && isLandscape) createFragments();
-}
-
-function checkOrientation() {
-  isLandscape = windowWidth > windowHeight;
-  if (!isLandscape) {
-    background(0);
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(32);
-    text('Bitte drehen Sie das Tablet ins Querformat!', width / 2, height / 2);
-  }
 }
 
 function createFragments() {
   fragments = [];
-  let fragWidth = width / gridSize;
-  let fragHeight = height / gridSize;
+  let fragWidth = 640; // 1920 / 3
+  let fragHeight = 400; // 1200 / 3
   for (let i = 0; i < gridSize * gridSize; i++) {
     let col = i % gridSize;
     let row = floor(i / gridSize);
@@ -65,10 +45,10 @@ function createFragments() {
     for (let layer = 0; layer < 5; layer++) {
       fragments.push({
         img: images[layer], x, y, width: fragWidth, height: fragHeight,
-        sourceX: (col * (images[layer]?.width || width)) / gridSize,
-        sourceY: (row * (images[layer]?.height || height)) / gridSize,
-        sourceWidth: (images[layer]?.width || width) / gridSize,
-        sourceHeight: (images[layer]?.height || height) / gridSize,
+        sourceX: (col * (images[layer]?.width || 1920)) / gridSize,
+        sourceY: (row * (images[layer]?.height || 1200)) / gridSize,
+        sourceWidth: (images[layer]?.width || 1920) / gridSize,
+        sourceHeight: (images[layer]?.height || 1200) / gridSize,
         visible: combinations[startCombo].includes(layer),
         state: startCombo,
         colorState: 0
@@ -78,10 +58,6 @@ function createFragments() {
 }
 
 function draw() {
-  if (!isLandscape) {
-    checkOrientation();
-    return;
-  }
   background(0);
   for (let frag of fragments) {
     if (frag.visible && frag.img) {
@@ -97,23 +73,18 @@ function draw() {
 }
 
 function mousePressed() {
-  if (isLandscape) {
-    handleInteraction(mouseX, mouseY);
-    return false;
-  }
+  handleInteraction(mouseX, mouseY);
+  return false;
 }
 
 function touchStarted() {
-  if (isLandscape) {
-    for (let touch of touches) handleInteraction(touch.x, touch.y);
-    return false;
-  }
+  for (let touch of touches) handleInteraction(touch.x, touch.y);
+  return false;
 }
 
 function handleInteraction(x, y) {
-  if (!isLandscape) return;
-  let col = floor(x / (width / gridSize));
-  let row = floor(y / (height / gridSize));
+  let col = floor(x / 640); // Feste Fragment-Breite
+  let row = floor(y / 400); // Feste Fragment-Höhe
   let index = row * gridSize + col;
   let baseIndex = index * 5;
 
