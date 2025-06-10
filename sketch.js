@@ -16,16 +16,20 @@ function preload() {
 }
 
 function setup() {
+  console.log("setup läuft");
   createCanvas(windowWidth, windowHeight);
+    console.log('isLandscape:', isLandscape);
+console.log('image load check:', images.map(img => img?.width));
   pixelDensity(1);
   noSmooth();
-  frameRate(30);
   checkOrientation();
-  if (images.every(img => img?.width || !img) && isLandscape) {
-    createFragments();
-  }
+
+  // !!! TESTWEISE überspringen wir die Bedingungen
+  createFragments();
+
   fullscreen(true);
 }
+
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
