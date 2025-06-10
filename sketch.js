@@ -14,10 +14,10 @@ const combinations = [
 
 function preload() {
   images = [
-    loadImage('LAYER_1.jpg'),
-    loadImage('LAYER_2.png'),
-    loadImage('LAYER_3.png'),
-    loadImage('LAYER_4.png'), 
+    loadImage('LAYER_1-min.jpg'),
+    loadImage('LAYER_2-min.png'),
+    loadImage('LAYER_3-min.png'),
+    loadImage('LAYER_4-min.png'), 
     null // Weißer Hintergrund
   ];
 }
